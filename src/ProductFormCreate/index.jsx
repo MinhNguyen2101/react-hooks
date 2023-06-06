@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { set } from 'react-hook-form';
 
 ProductFormCreate.propTypes = {
     createProduct: PropTypes.func,
@@ -10,14 +11,12 @@ ProductFormCreate.defaultProps = {
 }
 
 function ProductFormCreate(props) {
+    const dataUpdate = props.updateData;
     const {createProduct} = props;
     const [name,setName] = useState('');
     const [description,setDescription] = useState('');
     const [price,setPrice] = useState('');
 
-    // function handleSubmit(e){
-        
-    // }
 
     function addProduct(e){
         e.preventDefault();
@@ -27,6 +26,9 @@ function ProductFormCreate(props) {
             'price' : price,
         };
         createProduct(dataCreateProduct);
+        setName('');
+        setDescription('');
+        setPrice('');
     }
 
     return (

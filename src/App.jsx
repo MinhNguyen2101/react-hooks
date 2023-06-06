@@ -5,6 +5,7 @@ import ProductList from './ProductList';
 import Pagination from './Pagination';
 import queryString from 'query-string';
 import ProductFormCreate from './ProductFormCreate';
+import ProductFormEdit from './assets/ProductFormEdit';
 
 function App() {
 
@@ -16,10 +17,8 @@ function App() {
   });
   const [filter,setFilter] = useState({
     page:1,
-    deleteID,
-    statusCreate:0,
-
   });
+  const [statusAction,setStatusAction] = useState();
 
   function handlePagination(newPage)
   {
@@ -33,7 +32,6 @@ function App() {
 
   useEffect( ()=>{
     async function getListProducts(){
-
       const params = queryString.stringify(filter);
 
       const url = `http://127.0.0.1:8000/api/products?${params}`;
@@ -44,6 +42,7 @@ function App() {
       const currentPage = responeJson.data.current_page;
 
       setProductList(data);
+
       const newPagination = {
         ...pagination,
         'page' : currentPage,
@@ -52,30 +51,35 @@ function App() {
 
       setPagination(newPagination);
     }
+
     getListProducts();
-  },[filter]);
+
+      
+
+  },[filter,statusAction]);
 
 
   // Delete Product
   
   function deleteProduct(productId){
     setDeleteID(productId);
-    
   }
 
   useEffect( ()=>{
     if(deleteID){
       async function deleteProduct(){
-        const url = await fetch(`http://127.0.0.1:8000/api/products/${deleteID}`,{method:'DELETE'});
+        await fetch(`http://127.0.0.1:8000/api/products/${deleteID}`,{method:'DELETE'});
+
         const newFilter = {
-          ...filter,
+          ...statusAction,
         }
-        setFilter(newFilter);
+        setStatusAction(newFilter);
       }
       deleteProduct();
     }
 
   },[deleteID]);
+
   // Create Product
   const [dataProduct,setDataProduct] = useState();
   function getDataCreateProduct(data){
@@ -87,18 +91,59 @@ function App() {
       },
       body: JSON.stringify(data)
     });
+
     const newFilter = {
-      ...filter,
-      statusCreate:1,
+      ...statusAction,
     }
-    setFilter(newFilter);
+    setStatusAction(newFilter);
+
   }
 
+  // Update Product
+  const [dataUpdate,setDataUpdate] = useState({});
+  const [modal,setModal] = useState(false);
+
+  function getDataProduct(product){
+    setDataUpdate(product);
+    setModal(true);
+  }
+
+  function updateProduct(product){
+    async function update(){
+      const productID = product['id'];
+      delete product["id"];
+      const url = `http://127.0.0.1:8000/api/products/${productID}`;
+      const responese = await fetch(url,{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(product)
+      });
+    } 
+    update();
+    setModal(false);
+    const newStatus = {
+      ...statusAction,
+      status:1,
+    };
+    
+
+    setStatusAction(newStatus);
+  }
+  console.log(statusAction);
+
+ 
   return (
     <>
-    <ProductFormCreate  createProduct={getDataCreateProduct}/>
-      <ProductList products={productList} deleteProduct={deleteProduct}/>
+    <ProductFormCreate createProduct={getDataCreateProduct} updateData = {dataUpdate} />
+      <ProductList products={productList} deleteProduct={deleteProduct} editProductFunc={getDataProduct} />
       <Pagination pagination={pagination} onClickPage={handlePagination}/>
+      {modal &&(
+        <ProductFormEdit dataUpdate={dataUpdate} updateProduct={updateProduct}/>
+        
+      )}
+      
     </>
   )
 }
