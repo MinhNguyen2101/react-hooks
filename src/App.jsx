@@ -9,71 +9,55 @@ import ProductFormEdit from './assets/ProductFormEdit';
 
 function App() {
 
-  const [productList,setProductList] = useState([]);
+  const [productList, setProductList] = useState([]);
   const [deleteID, setDeleteID] = useState();
-  const [pagination,setPagination] = useState({
-    page:1,
-    lastPage: 1,
-  });
-  const [filter,setFilter] = useState({
-    page:1,
-  });
-  const [statusAction,setStatusAction] = useState();
 
-  function handlePagination(newPage)
-  {
-    const newFilter = {
-      ...filter,
-      page : newPage,
-    }
-    setFilter(newFilter);
-  }
+  const [statusAction, setStatusAction] = useState();
+
+  const [currentPage, setCurrentPage] = useState(1)
+
+
+  function handlePagination(newPage) {
   
+    setCurrentPage(newPage)
+  }
 
-  useEffect( ()=>{
-    async function getListProducts(){
-      const params = queryString.stringify(filter);
-
-      const url = `http://127.0.0.1:8000/api/products?${params}`;
-      const responese = await fetch(url);
-      const responeJson = await responese.json();
-      const data = responeJson.data.data;
-      const lastPage = responeJson.data.last_page;
-      const currentPage = responeJson.data.current_page;
-
-      setProductList(data);
-
-      const newPagination = {
-        ...pagination,
-        'page' : currentPage,
-        'lastPage':lastPage,
-      };
-
-      setPagination(newPagination);
+  const getListProducts = async () => {
+    const dataPost = {
+      page: currentPage
     }
+    const params = queryString.stringify(dataPost);
 
+    const url = `http://127.0.0.1:8000/api/products?${params}`;
+    const responese = await fetch(url);
+    const responeJson = await responese.json();
+    console.log(responeJson)
+
+    setProductList(responeJson.data);
+  }
+
+  useEffect(() => {
     getListProducts();
-
-      
-
-  },[filter,statusAction]);
+  }, [currentPage]);
 
 
   // Delete Product
-  
-  function deleteProduct(productId){
+
+  function deleteProduct(productId) {
     setDeleteID(productId);
   }
 
-  useEffect( ()=>{
-    if(deleteID){
-      async function deleteProduct(){
-        await fetch(`http://127.0.0.1:8000/api/products/${deleteID}`,{method:'DELETE'});
-
-        const newFilter = {
-          ...statusAction,
-        }
-        setStatusAction(newFilter);
+  useEffect(() => {
+    if (deleteID) {
+      async function deleteProduct() {
+        await fetch(`http://127.0.0.1:8000/api/products/${deleteID}`, 
+        { 
+          method: 'DELETE' 
+        }).then((res)=> {
+          if(res.status ===200){
+            getListProducts();
+          }
+        });
       }
       deleteProduct();
     }
@@ -81,8 +65,8 @@ function App() {
   },[deleteID]);
 
   // Create Product
-  const [dataProduct,setDataProduct] = useState();
-  function getDataCreateProduct(data){
+  // const [dataProduct, setDataProduct] = useState();
+  function getDataCreateProduct(data) {
 
     fetch('http://127.0.0.1:8000/api/products', {
       method: 'POST',
@@ -90,60 +74,56 @@ function App() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
+    }).then((res)=>{
+      if(res.status === 200){
+        getListProducts();
+      }
     });
-
-    const newFilter = {
-      ...statusAction,
-    }
-    setStatusAction(newFilter);
-
   }
 
   // Update Product
-  const [dataUpdate,setDataUpdate] = useState({});
-  const [modal,setModal] = useState(false);
+  const [dataUpdate, setDataUpdate] = useState({});
+  const [modal, setModal] = useState(false);
 
-  function getDataProduct(product){
+  function getDataProduct(product) {
     setDataUpdate(product);
     setModal(true);
   }
 
-  function updateProduct(product){
-    async function update(){
+  function updateProduct(product) {
+    async function update() {
       const productID = product['id'];
       delete product["id"];
       const url = `http://127.0.0.1:8000/api/products/${productID}`;
-      const responese = await fetch(url,{
+      const responese = await fetch(url, {
+        mode: 'cors',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(product)
+      }).then((res) => {
+        if (res.status === 200) {
+          getListProducts()
+        }
       });
-    } 
+    }
+
     update();
     setModal(false);
-    const newStatus = {
-      ...statusAction,
-      status:1,
-    };
-    
-
-    setStatusAction(newStatus);
   }
-  console.log(statusAction);
 
- 
+
   return (
     <>
-    <ProductFormCreate createProduct={getDataCreateProduct} updateData = {dataUpdate} />
-      <ProductList products={productList} deleteProduct={deleteProduct} editProductFunc={getDataProduct} />
-      <Pagination pagination={pagination} onClickPage={handlePagination}/>
-      {modal &&(
-        <ProductFormEdit dataUpdate={dataUpdate} updateProduct={updateProduct}/>
-        
+      <ProductFormCreate createProduct={getDataCreateProduct} updateData={dataUpdate} />
+      <ProductList products={productList?.data} deleteProduct={deleteProduct} editProductFunc={getDataProduct} />
+      <Pagination lastPage={productList.last_page} currentPage={productList.current_page} onClickPage={handlePagination} />
+      {modal && (
+        <ProductFormEdit dataUpdate={dataUpdate} updateProduct={updateProduct} />
+
       )}
-      
+
     </>
   )
 }
