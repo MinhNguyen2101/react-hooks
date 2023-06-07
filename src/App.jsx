@@ -1,21 +1,18 @@
 import { useEffect, useState } from 'react'
 import viteLogo from '/vite.svg'
 import './App.css'
-import ProductList from './ProductList';
-import Pagination from './Pagination';
+import ProductList from './components/ProductList';
+import Pagination from './components/Pagination';
 import queryString from 'query-string';
-import ProductFormCreate from './ProductFormCreate';
-import ProductFormEdit from './assets/ProductFormEdit';
+import ProductFormCreate from './components/ProductFormCreate';
+import ProductFormEdit from './components/ProductFormEdit';
 
 function App() {
 
   const [productList, setProductList] = useState([]);
   const [deleteID, setDeleteID] = useState();
 
-  const [statusAction, setStatusAction] = useState();
-
   const [currentPage, setCurrentPage] = useState(1)
-
 
   function handlePagination(newPage) {
   
